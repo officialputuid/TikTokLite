@@ -1,0 +1,37 @@
+[package]
+name = "tiktok-lite"
+version = "0.3.0"
+edition = "2021"
+rust-version = "1.88"
+
+[lib]
+name = "tiktok_lite"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tiktok-lite"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "=2.5.0"
+
+[target.'cfg(windows)'.dependencies]
+tauri = { version = "=2.11.5", features = ["tray-icon", "image-png", "image-ico"] }
+tauri-plugin-autostart = "=2.5.1"
+tauri-plugin-dialog = "=2.6.0"
+tauri-plugin-opener = "=2.5.5"
+tauri-plugin-single-instance = "=2.4.0"
+ureq = { version = "=3.1.4", features = ["json"] }
+webview2-com = "=0.38.2"
+windows-core = "=0.61.2"
+
+[build-dependencies]
+tauri-build = "=2.6.3"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

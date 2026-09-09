@@ -1,0 +1,17 @@
+/target/
+/dist/
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Local environment
+.env
+.env.*
+!.env.example

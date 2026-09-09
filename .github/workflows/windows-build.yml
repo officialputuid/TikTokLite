@@ -1,0 +1,82 @@
+name: Windows build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install stable Rust MSVC
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt, clippy
+
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Run tests
+        run: cargo test --all-targets
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Build NSIS bundle
+        uses: tauri-apps/tauri-action@944946e3e4cac6603d1fe8f514171e9ecd3c78aa # v1
+        with:
+          args: --bundles nsis
+
+      - name: Collect and verify release files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $portable = @(Get-Item 'target/release/tiktok-lite.exe')
+          $setups = @(Get-ChildItem 'target/release/bundle/nsis/*-setup.exe' -File)
+          if ($portable.Count -ne 1) { throw "Expected exactly one portable executable; found $($portable.Count)." }
+          if ($setups.Count -ne 1) { throw "Expected exactly one NSIS setup executable; found $($setups.Count)." }
+
+          New-Item -ItemType Directory -Force 'dist' | Out-Null
+          Copy-Item $portable[0].FullName 'dist/tiktok-lite.exe'
+          Copy-Item $setups[0].FullName 'dist/'
+
+          $outputs = @(Get-ChildItem 'dist/*.exe' -File)
+          if ($outputs.Count -ne 2) { throw "Expected exactly two release executables; found $($outputs.Count)." }
+          if (@($outputs | Where-Object Name -eq 'tiktok-lite.exe').Count -ne 1) { throw 'Portable executable missing.' }
+          if (@($outputs | Where-Object Name -like '*-setup.exe').Count -ne 1) { throw 'NSIS setup executable missing.' }
+
+      - name: Upload Windows x64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TikTok-Lite-Windows-x64
+          path: dist/*.exe
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Select-String -Path 'Cargo.toml' -Pattern '^version\s*=\s*"([^"]+)"$').Matches.Groups[1].Value
+          if (-not $version) { throw 'Could not read package version from Cargo.toml.' }
+          $tag = "v$version"
+          $files = @(Get-ChildItem 'dist/*.exe' -File | ForEach-Object FullName)
+          if ($files.Count -ne 2) { throw "Expected exactly two release executables; found $($files.Count)." }
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $files --clobber
+          } else {
+            gh release create $tag $files --target '${{ github.sha }}' --title "TikTok Lite $tag" --generate-notes
+          }
+          if ($LASTEXITCODE -ne 0) { throw "Failed to publish GitHub release $tag." }
