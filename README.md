@@ -15,9 +15,6 @@ Built with Tauri 2 and Microsoft Edge WebView2. No bundled Chromium, no custom a
 
 </div>
 
-> [!NOTE]
-> TikTok Lite is an independent, unofficial wrapper for [TikTok Web](https://www.tiktok.com/). It is not affiliated with or endorsed by TikTok or ByteDance.
-
 ## Why TikTok Lite?
 
 TikTok Lite uses the WebView2 runtime already available on most current Windows systems instead of shipping another browser engine. The result is a compact executable with native window, tray, and startup controls around the standard TikTok website.
@@ -137,8 +134,10 @@ Use **Tray → Clear Site Data**, then sign in again. This intentionally removes
 
 ---
 
-<div align="center">
+## Disclaimer
 
-Maintained by [officialputuid](https://github.com/officialputuid)
+TikTok Lite is an independent, unofficial wrapper for [TikTok Web](https://www.tiktok.com/). It is not affiliated with or endorsed by TikTok or ByteDance.
 
-</div>
+## Developer
+
+Built and maintained by [officialputuid](https://github.com/officialputuid).
